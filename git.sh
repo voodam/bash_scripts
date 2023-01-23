@@ -13,6 +13,25 @@ git_rebase_master() {
   git rebase "$master"
 }
 
+git_move_branch() {
+  local num_commits=$1
+  local master_branch="$2"
+  local branch="${3:-$(git_cur_branch)}"
+
+  git checkout "$branch"
+  git checkout -b "$branch-old"
+  readarray -t commits < <(git log --reverse -$num_commits --pretty=format:"%h")
+
+  git checkout "$master_branch"
+  git branch -D "$branch"
+  git checkout -b "$branch"
+  for commit in ${commits[@]}
+    do git cherry-pick $commit
+  done
+
+  git branch -D "$branch-old"
+}
+
 git_find_gca() {
   git show `git rev-list ${1:-5.7} ^${2:-origin/8.0} --first-parent --topo-order | tail -1`^ | head -1 | awk '{print $2}'
 }
